@@ -1,0 +1,41 @@
+<Log>:
+    Label:
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+        text: self.parent.text
+<MenuScreen>:
+    BoxLayout:
+        Button:
+            text: 'Goto settings'
+            on_press:
+                # root.manager.transition.direction = 'left'
+                root.manager.current = 'settings'
+        Button:
+            text: 'Play'
+            on_press:
+                root.manager.current = 'game'
+
+<SettingScreen>:
+    BoxLayout:
+        Button:
+            text: 'My settings button'
+        Button:
+            text: 'Back to menu'
+            on_press:
+                # root.manager.transition
+                root.manager.current = 'menu'
+
+<GameScreen>
+    canvas:
+        Color:
+            rgba:0,0,1,1
+#        Rectangle:
+#            size:root.size
+
+
+<ButtonManager>:
+    size_hint_x:0.5
+    size_hint_y:0.5
+    pos_hint_x:0.5
+    pos_hint_y:0.5
