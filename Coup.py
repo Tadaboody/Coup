@@ -153,10 +153,12 @@ class Coup:
         """All of the info needed about the game to load it/play on it"""
         return self._current_game_state
 
-    class GameState:
-        def __init__(self, players, deck):
+    class Turn:
+        def __init__(self, players, deck,player,):
             self.players = players
             self.deck = deck
+			self.current_player = current_player_pointer
+			self.
 
     def output(self,output):
         print output
