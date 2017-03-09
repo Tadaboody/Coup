@@ -193,6 +193,8 @@ class MonteCarloAI(Player):
     def inspect_action(self, action, callback):
         pass
 
+    def think_about_turn(self,turn):
+        self.other_players.
     def __init__(self, num=3, coins=2):
         super(MonteCarloAI, self).__init__(num, coins)
         self.other_players = dict()

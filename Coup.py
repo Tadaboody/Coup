@@ -149,6 +149,8 @@ class Coup:
     def pass_turn(self):
         this_turn = Coup.Turn(self.deck,self.current_action,self.stopping_action,self.inspecting_player)
         self.turns.append(this_turn)
+        for player in self.players:
+            player.think_about_turn(this_turn)
         self.run_turn()
 
     class Turn:
