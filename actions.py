@@ -30,6 +30,7 @@ class Action:
     def __str__(self):
         return "P{} does {} \n".format(self.executor.num,self.name)
 
+
 class Steal(Action):
     def __init__(self, player, game=None):
         super(Steal, self).__init__(player)

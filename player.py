@@ -48,13 +48,13 @@ class Player():  # TODO: make an abstract player class
                "Coins:{}\n" \
                "Hand size:{}".format(self.num, self.coins, len(self.hand))
 
-    @property
-    def num(self):
-        return self._num
-
-    @num.setter
-    def num(self, value):
-        self._num = value
+    # @property
+    # def num(self):
+    #     return self._num
+    #
+    # @num.setter
+    # def num(self, value):
+    #     self._num = value
 
     def take_turn(self, callback):
         self.pick_action(callback)
@@ -114,12 +114,6 @@ class HumanPlayer(Player):
         super(HumanPlayer, self).__init__(num, coins)
         self.strategy = "Human"
 
-    # def take_turn(self, callback):
-    #     self.pick_action(callback)
-
-    # def draw_card(self, card):
-    #     self.hand.append(card)
-
     def pick_target(self, callback):
         players_copy = copy.copy(self.game.players)
         players_copy.remove(self)
@@ -176,7 +170,7 @@ class RandomAI(Player):
         callback(card)
 
 
-class MonteCarloAI(Player):
+class ThinkingAI(Player):
     def stop_action(self, callback, action):
         pass
 
@@ -194,10 +188,25 @@ class MonteCarloAI(Player):
         pass
 
     def think_about_turn(self,turn):
-        self.other_players.
+        if turn is self.game.turns[0]:
+            self.init_player_dict()
+        current_player = turn.main_action.executor
+        if not (turn.main_action.cancelled or turn.main_action.stopped):#if the action was succsessfully done
+            pass
+
     def __init__(self, num=3, coins=2):
-        super(MonteCarloAI, self).__init__(num, coins)
+        super(ThinkingAI, self).__init__(num, coins)
+        self.strategy = "Thinking"
         self.other_players = dict()
 
-        # def draw_card(self, card):
-        #     super(MonteCarloAI, self).draw_card(card)
+    def draw_card(self, card):
+        super(ThinkingAI, self).draw_card(card)
+
+    def init_player_dict(self):
+        for player in self.game.players:
+            if player is not self:
+                self.other_players[player] = dict()
+                for i in xrange(Card.num_of_types):
+                    self.other_players[player][Card(i)] = 1
+                for card in self.hand:
+                    self.other_players[player][card] -= 1
