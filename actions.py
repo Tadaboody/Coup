@@ -57,7 +57,6 @@ class Steal(Action):
             super(Steal, self).do_action()
 
 
-
 class CounterAction(Action):
     def __init__(self, player, counter_of,game=None):
         super(CounterAction, self).__init__(player,game)
@@ -66,6 +65,7 @@ class CounterAction(Action):
         self.name = "Counter"
 
     def do_action(self):
+        self.counter_of.stopped= True
         super(CounterAction, self).do_action()
 
     def __str__(self):
@@ -81,6 +81,7 @@ class Income(Action):
         self.executor.coins += 1
         super(Income, self).do_action()
 
+
 class ForeignAid(Action):
     def __init__(self, player, game=None):
         super(ForeignAid, self).__init__(player)
@@ -90,6 +91,7 @@ class ForeignAid(Action):
     def do_action(self):
         self.executor.coins += 2
         super(ForeignAid, self).do_action()
+
 
 class Coup(Action):
     def __init__(self, player, game=None):
@@ -104,8 +106,11 @@ class Coup(Action):
         self.executor.coins-=self.cost
         self.game.damage_player(target,super(Coup, self).do_action)
         # super(Coup, self).do_action()
-    def is_valid(self):#TODO was here
+
+    def is_valid(self):
         return self.executor.coins>=self.cost
+
+
 class Assassinate(Coup):
     def __init__(self, player, game=None):
         super(Assassinate, self).__init__(player)
@@ -124,6 +129,8 @@ class Tax(Action):
     def do_action(self):
         self.executor.coins += 3
         super(Tax, self).do_action()
+
+
 class Exchange(Action):
     def __init__(self, player, game=None):
         super(Exchange, self).__init__(player)

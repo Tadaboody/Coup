@@ -2,7 +2,7 @@ from itertools import cycle
 from card import Card
 from random import shuffle
 import actions
-
+import copy
 
 class TurnPassException(Exception):
     def __str__(self):
@@ -26,12 +26,13 @@ class Coup:
         self.current_action = None
         self.stopping_player = None
         self.inspecting_player = None
+        self.stopping_action = None
         self.init_deck(deck_size)
         self.players = []  # player initialization
         for player in players:
             self.add_player(player)
         self.current_player_pointer = cycle(self.players)
-        self._current_game_state = Coup.GameState(self.players, self.deck)
+        self.turns = list()
 
     def init_deck(self, deck_size):
         for i in xrange(deck_size):
@@ -101,8 +102,9 @@ class Coup:
             self.output("P{} is inspecting the {}".format(self.inspecting_player.num,self.current_action))
             if self.demand_proof(self.current_action,self.inspecting_player):
                 self.damage_player(self.inspecting_player,callback=self.current_action.do_action)
-                self.current_action.do_action()
+                # self.current_action.do_action()
             else:
+                self.current_action.stopped = True
                 self.damage_player(self.current_action.executor,self.pass_turn)
         else:
             inspecting_player = next(self.inspect_cycle)
@@ -125,7 +127,7 @@ class Coup:
 
     def stop_action(self,stop):
         if stop:
-            counter = actions.CounterAction(player=self.stopping_player,game=self,counter_of=self.current_action)
+            self.stopping_action = counter = actions.CounterAction(player=self.stopping_player,game=self,counter_of=self.current_action)
             self.declare_action_to_inspect(counter)
         else:
             self.stopping_player = next(self.stopping_cycle)
@@ -145,20 +147,19 @@ class Coup:
             self.deck.append(card)
 
     def pass_turn(self):
-
+        this_turn = Coup.Turn(self.deck,self.current_action,self.stopping_action,self.inspecting_player)
+        self.turns.append(this_turn)
         self.run_turn()
 
-    @property
-    def current_game_state(self):
-        """All of the info needed about the game to load it/play on it"""
-        return self._current_game_state
-
     class Turn:
-        def __init__(self, players, deck,player,):
-            self.players = players
-            self.deck = deck
-			self.current_player = current_player_pointer
-			self.
+        def __init__(self,deck,main_action,stopping_action,inspector):
+            self.deck = tuple(deck)
+            self.main_action = copy.copy(main_action)
+            self.stopping_action = copy.copy(stopping_action) #just to make sure its by value, actually should be immutable
+            if self.main_action.cancled: #only if the inspector was right
+                self.inspector = copy.copy(inspector)
+            else:
+                self.inspector = None
 
     def output(self,output):
         print output
@@ -178,14 +179,16 @@ class Coup:
         return False
 
     def damage_player(self, player,callback):
+        self.damage_callback = callback #quick_fix
         player.discard_card(self.player_damaged)
         self.output("Damage P{}~!".format(str(player.num)))
-        callback()
+        # callback()
 
     def player_damaged(self,cards):
         for player in self.players:
             if not player.hand:
                 self.remove_player(player)
+        self.damage_callback()
 
     def remove_player(self, player):
         self.output("Player {} Removed!".format(player.num))

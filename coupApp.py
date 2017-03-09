@@ -38,7 +38,7 @@ class GameScreen(Screen):
     # player_places = [Blob(anchor_x=ps[0],anchor_y=ps[1]) for ps in player_positions]
 
     def on_pre_enter(self, *args):
-        self.add_widget(GraphicalCoup(players=(player.RandomAI(),player.RandomAI())))
+        self.add_widget(GraphicalCoup(players=(player.HumanPlayer(),player.HumanPlayer())))
 
 
 class GraphicalCoup(RelativeLayout,Coup):
@@ -103,31 +103,8 @@ class GraphicalPlayer(player.HumanPlayer):
         self._num = 0
         self.num = num
 
-    # def pick_action(self, callback):
-    #     ButtonGenerator.generate_choice(self.possible_actions,self.game,callback,text='Pick an action {}'.format(self.__repr__()))
-    #
-    # def pick_target(self, callback):
-    #     players_copy = copy.copy(self.game.players)
-    #     players_copy.remove(self)
-    #     ButtonGenerator.generate_choice(players_copy,self.game,callback,'Who do you pick?')
-    #
-    # def inspect_action(self, action, callback):#TODO: was here
-    #     ButtonGenerator.generate_choice([True,False], self.game, callback, "{} Do you demand proof?".format(self.__repr__()))
-    #
-    # def stop_action(self, callback, action):
-    #     ButtonGenerator.generate_choice([True, False], self.game, callback, "{} Do you stop the action {}?".format(self.__repr__(),action.name))
-
     def pick_item(self,items,message,callback,pop=False):
         ButtonGenerator.generate_choice(items,self.game, callback,text=message)
-    # @property
-    # def num(self):
-    #     return self._num
-    #
-    # @num.setter
-    # def num(self, value):
-    #     self._num = value
-    #     self.number = value
-
 
 
 
