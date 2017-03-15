@@ -40,7 +40,7 @@ class GameScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.add_widget(GraphicalCoup(
-            players=(player.RandomAI(), player.RandomAI(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
+            players=(player.RandomAI(), player.ThinkingAI(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
 
 
 class GraphicalCoup(RelativeLayout, Coup):
@@ -84,7 +84,7 @@ class GraphicalCoup(RelativeLayout, Coup):
         super(GraphicalCoup, self).declare_action_to_stop()
 
     def declare_winner(self, winner):
-        winner_label = Label(text='Player {} wins!'.format(winner.num))
+        winner_label = Label(text='{} Player {} wins!'.format(winner.strategy,winner.num))
         self.add_widget(winner_label)
         super(GraphicalCoup, self).declare_winner(winner)
 

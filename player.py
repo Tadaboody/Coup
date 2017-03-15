@@ -15,16 +15,16 @@ class Player():  # TODO: make an abstract player class
         self.hand = list()
         self.hand_size = 0
         self.coins = coins
-        self._num = num
-        self.possible_actions = [
-            actions.Income(self),
-            actions.Steal(self),
-            actions.ForeignAid(self),
-            actions.Coup(self),
-            actions.Assassinate(self),
-            actions.Tax(self),
-            # actions.Exchange(self)
-        ]
+        self.num = num
+        self.possible_actions = {
+            'income': actions.Income(self),
+            'steal': actions.Steal(self),
+            'aid': actions.ForeignAid(self),
+            'coup': actions.Coup(self),
+            'assassinate': actions.Assassinate(self),
+            'tax': actions.Tax(self),
+            # 'exchange':actions.Exchange(self)
+        }
         self._game = None
 
     @property
@@ -33,7 +33,7 @@ class Player():  # TODO: make an abstract player class
 
     @game.setter
     def game(self, value):
-        for action in self.possible_actions:
+        for name, action in self.possible_actions.iteritems():
             action.game = value
         self._game = value
 
@@ -106,8 +106,12 @@ class Player():  # TODO: make an abstract player class
         self.picked = list()
         self.pick_card(callback)
 
-    def think_about_turn(self,turn):
+    def think_about_turn(self, turn):
         pass
+
+    def start_thinking(self):
+        pass
+
 
 class HumanPlayer(Player):
     def __init__(self, num=3, coins=2):
@@ -145,7 +149,7 @@ class RandomAI(Player):
         self.strategy = "Random"
 
     def pick_action(self, callback):
-        act = self.possible_actions[randint(0, len(self.possible_actions) - 1)]
+        act = random.choice(self.possible_actions.values())  # needs to be a dict - not polymorphic :(
         callback(act)
 
     def stop_action(self, callback, action):
@@ -171,6 +175,9 @@ class RandomAI(Player):
 
 
 class ThinkingAI(Player):
+    doubt_const = 0
+    sure_const = 1
+
     def stop_action(self, callback, action):
         pass
 
@@ -179,7 +186,7 @@ class ThinkingAI(Player):
 
     def pick_action(self, callback):
         if self.coins >= 7:
-            callback(self.possible_actions)
+            callback(self.possible_actions['coup'])
 
     def pick_card(self, callback):
         pass
@@ -187,12 +194,17 @@ class ThinkingAI(Player):
     def inspect_action(self, action, callback):
         pass
 
-    def think_about_turn(self,turn):
-        if turn is self.game.turns[0]:
-            self.init_player_dict()
-        current_player = turn.main_action.executor
-        if not (turn.main_action.cancelled or turn.main_action.stopped):#if the action was succsessfully done
-            pass
+    def think_about_turn(self, turn):
+        self.think_about_action(turn.main_action, turn)
+
+    def think_about_action(self, action, turn):
+        current_player = action.executor
+        if not (action.cancelled or action.stopped):  # if the action was succsessfully done
+            self.other_players[current_player][action.enabler_card] += self.sure_const
+        if action.cancelled:
+            self.other_players[current_player][action.enabler_card] = 0
+        if action.stopped:
+            self.think_about_action(turn.stopping_action, turn)
 
     def __init__(self, num=3, coins=2):
         super(ThinkingAI, self).__init__(num, coins)
@@ -202,11 +214,15 @@ class ThinkingAI(Player):
     def draw_card(self, card):
         super(ThinkingAI, self).draw_card(card)
 
+    def start_thinking(self):
+        self.init_player_dict()
+
     def init_player_dict(self):
         for player in self.game.players:
             if player is not self:
                 self.other_players[player] = dict()
-                for i in xrange(Card.num_of_types):
-                    self.other_players[player][Card(i)] = 1
+                for i in xrange(1, Card.num_of_types):
+                    # starting probability for having a certain type - amount of cards from a type/total cards
+                    self.other_players[player][Card(i)] = self.game.deck_size / self.game.deck_size * Card.num_of_types
                 for card in self.hand:
-                    self.other_players[player][card] -= 1
+                    self.other_players[player][card] /= self.game.deck_size

@@ -15,11 +15,6 @@ class GameEndException(Exception):
         return "Game over!"
 
 
-class Turn:
-    def __init__(self):
-        self.player = None
-
-
 class Coup:
     def __init__(self, players, deck_size=2, hand_size=2):
         self.hand_size = hand_size
@@ -30,10 +25,13 @@ class Coup:
         self.stopping_player = None
         self.inspecting_player = None
         self.stopping_action = None
+        self.deck_size = deck_size
         self.init_deck(deck_size)
         self.players = []  # player initialization
         for player in players:
             self.add_player(player)
+        for player in players:
+            player.start_thinking()
         self.current_player_pointer = cycle(self.players)
         self.turns = list()
 
@@ -173,7 +171,7 @@ class Coup:
         print '\n'
 
     def declare_winner(self, winner):
-        self.output("Player {} wins!".format(winner.num))
+        self.output("{} Player {} wins!".format(winner.strategy, winner.num))
         # raise GameEndException()
 
     def demand_proof(self, action, inspector):
