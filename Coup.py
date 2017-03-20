@@ -15,6 +15,11 @@ class GameEndException(Exception):
         return "Game over!"
 
 
+class EmptyDeckException(Exception):
+    def __str__(self):
+        return "Not enough cards for players"
+
+
 class Coup:
     def __init__(self, players, deck_size=2, hand_size=2):
         self.hand_size = hand_size
@@ -28,6 +33,8 @@ class Coup:
         self.deck_size = deck_size
         self.init_deck(deck_size)
         self.players = []  # player initialization
+        if len(players) * hand_size > deck_size * Card.num_of_types:  # if there arent enough cards
+            raise EmptyDeckException()
         for player in players:
             self.add_player(player)
         for player in players:
@@ -60,6 +67,7 @@ class Coup:
             self.stopping_player = None
             self.inspecting_player = None
             current_player = next(self.current_player_pointer)
+            self.output("New Turn!")
             self.output(current_player)
             while not current_player.playing:
                 current_player = next(self.current_player_pointer)
@@ -101,17 +109,19 @@ class Coup:
     def inspect_action(self, inspection):
         if inspection:
             self.output("P{} is inspecting the {}".format(self.inspecting_player.num, self.current_action))
+            self.current_action.inspected = True
             if self.demand_proof(self.current_action, self.inspecting_player):
-                self.damage_player(self.inspecting_player, callback=self.current_action.do_action)
+                self.damage_player(self.inspecting_player, callback=self.declare_action_to_stop)
                 # self.current_action.do_action()
             else:
-                self.current_action.stopped = True
+                self.current_action.canceled = True
                 self.damage_player(self.current_action.executor, self.pass_turn)
         else:
             inspecting_player = next(self.inspect_cycle)
             if inspecting_player is not self.current_action.executor:
                 inspecting_player.inspect_action(action=self.current_action, callback=self.inspect_action)
             else:
+                self.current_action.inspected = False
                 self.declare_action_to_stop()
 
     def declare_action_to_stop(self):
@@ -161,7 +171,7 @@ class Coup:
             self.main_action = copy.copy(main_action)
             self.stopping_action = copy.copy(
                 stopping_action)  # just to make sure its by value, actually should be immutable
-            if self.main_action.cancled:  # only if the inspector was right
+            if self.main_action.canceled:  # only if the inspector was right
                 self.inspector = copy.copy(inspector)
             else:
                 self.inspector = None
@@ -184,9 +194,9 @@ class Coup:
         return False
 
     def damage_player(self, player, callback):
+        self.output("Damage P{}~!".format(str(player.num)))
         self.damage_callback = callback  # quick_fix
         player.discard_card(self.player_damaged)
-        self.output("Damage P{}~!".format(str(player.num)))
         # callback()
 
     def player_damaged(self, cards):
@@ -212,7 +222,3 @@ class Coup:
             for player in self.players:
                 if player.playing:
                     self.declare_winner(player)
-
-# game = Coup([player.Player(),player.Player(),player.Player()],3)
-#
-# game.run_game()

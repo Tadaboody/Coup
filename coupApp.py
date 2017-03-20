@@ -30,6 +30,7 @@ class Log(ScrollView):
     def __iadd__(self, other):
         self._internal_text += other + '\n'
         self.text = self._internal_text
+        return self
         # self.do_scroll
 
 
@@ -40,7 +41,7 @@ class GameScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.add_widget(GraphicalCoup(
-            players=(player.RandomAI(), player.ThinkingAI(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
+            players=(player.HumanPlayer(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
 
 
 class GraphicalCoup(RelativeLayout, Coup):
@@ -59,7 +60,8 @@ class GraphicalCoup(RelativeLayout, Coup):
         super(GraphicalCoup, self).output(output)
         string = (str(output))
         # print string
-        self.log.__iadd__(string)
+        # self.log.__iadd__(string)
+        self.log += string
         # self.text_label.refresh()
 
     def add_player(self, player):
@@ -84,7 +86,7 @@ class GraphicalCoup(RelativeLayout, Coup):
         super(GraphicalCoup, self).declare_action_to_stop()
 
     def declare_winner(self, winner):
-        winner_label = Label(text='{} Player {} wins!'.format(winner.strategy,winner.num))
+        winner_label = Label(text='{} Player {} wins!'.format(winner.strategy, winner.num))
         self.add_widget(winner_label)
         super(GraphicalCoup, self).declare_winner(winner)
 
@@ -142,4 +144,8 @@ class ButtonGenerator(BoxLayout):
                                                                       buttons=self.parent))
 
 
+# game = Coup([player.HumanPlayer(),player.RandomAI(),player.RandomAI()],3)
+#
+# game.run_game()
+#
 CoupApp().run()

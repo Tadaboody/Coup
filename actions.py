@@ -13,6 +13,7 @@ class Action:
         self.name = "MISSING NAME"
         self.stopped = False
         self.canceled = False
+        self.inspected = False
         self.game = game
 
     @abstractmethod

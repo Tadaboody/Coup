@@ -16,15 +16,24 @@ class Player():  # TODO: make an abstract player class
         self.hand_size = 0
         self.coins = coins
         self.num = num
-        self.possible_actions = {
-            'income': actions.Income(self),
-            'steal': actions.Steal(self),
-            'aid': actions.ForeignAid(self),
-            'coup': actions.Coup(self),
-            'assassinate': actions.Assassinate(self),
-            'tax': actions.Tax(self),
-            # 'exchange':actions.Exchange(self)
-        }
+        # self.possible_actions = {
+        #     'income': actions.Income(self),
+        #     'steal': actions.Steal(self),
+        #     'aid': actions.ForeignAid(self),
+        #     'coup': actions.Coup(self),
+        #     'assassinate': actions.Assassinate(self),
+        #     'tax': actions.Tax(self),
+        #     # 'exchange':actions.Exchange(self)
+        # }
+        self.possible_actions = [
+            actions.Income(self),
+            actions.Steal(self),
+            actions.ForeignAid(self),
+            actions.Coup(self),
+            actions.Assassinate(self),
+            actions.Tax(self),
+            # actions.Exchange(self)
+        ]
         self._game = None
 
     @property
@@ -33,7 +42,8 @@ class Player():  # TODO: make an abstract player class
 
     @game.setter
     def game(self, value):
-        for name, action in self.possible_actions.iteritems():
+        # for name, action in self.possible_actions.iteritems():
+        for action in self.possible_actions:
             action.game = value
         self._game = value
 
@@ -149,7 +159,8 @@ class RandomAI(Player):
         self.strategy = "Random"
 
     def pick_action(self, callback):
-        act = random.choice(self.possible_actions.values())  # needs to be a dict - not polymorphic :(
+        # act = random.choice(self.possible_actions.values())  # needs to be a dict - not polymorphic :(
+        act = random.choice(self.possible_actions)
         callback(act)
 
     def stop_action(self, callback, action):
@@ -175,18 +186,22 @@ class RandomAI(Player):
 
 
 class ThinkingAI(Player):
-    doubt_const = 0
-    sure_const = 1
+    doubt_const = 0.5
+    sure_const = 3
 
     def stop_action(self, callback, action):
         pass
 
     def pick_target(self, callback):
-        pass
+        if isinstance(self.current_action, actions.Coup):
+            self.pick_coup_target(callback)
+        elif isinstance(self.current_action, actions.Steal):
+            self.pick_steal_target(callback)
 
     def pick_action(self, callback):
+        """If you can coup, coup"""
         if self.coins >= 7:
-            callback(self.possible_actions['coup'])
+            callback(self.find_action_by_name('coup'))
 
     def pick_card(self, callback):
         pass
@@ -199,8 +214,10 @@ class ThinkingAI(Player):
 
     def think_about_action(self, action, turn):
         current_player = action.executor
+        if action.inspected and not action.canceled:
+            self.other_players[current_player][action.enabler_card] = 1
         if not (action.cancelled or action.stopped):  # if the action was succsessfully done
-            self.other_players[current_player][action.enabler_card] += self.sure_const
+            self.other_players[current_player][action.enabler_card] *= self.sure_const
         if action.cancelled:
             self.other_players[current_player][action.enabler_card] = 0
         if action.stopped:
@@ -210,9 +227,11 @@ class ThinkingAI(Player):
         super(ThinkingAI, self).__init__(num, coins)
         self.strategy = "Thinking"
         self.other_players = dict()
+        self.current_action = None
 
-    def draw_card(self, card):
-        super(ThinkingAI, self).draw_card(card)
+    # def draw_card(self, card): # i'd use this to update the player_dict, but I dont know the rest of the players are
+    # initialized at this point
+    #     super(ThinkingAI, self).draw_card(card)
 
     def start_thinking(self):
         self.init_player_dict()
@@ -225,4 +244,24 @@ class ThinkingAI(Player):
                     # starting probability for having a certain type - amount of cards from a type/total cards
                     self.other_players[player][Card(i)] = self.game.deck_size / self.game.deck_size * Card.num_of_types
                 for card in self.hand:
-                    self.other_players[player][card] /= self.game.deck_size
+                    self.other_players[player][card] -= 1 / self.game.deck_size
+
+    def pick_steal_target(self, callback):
+        """returns false if there isn't anyone to steal from, otherwise calls callback with the target
+         - the player with the most coins"""
+        players_copy = copy.copy(self.game.players)
+        players_copy.remove(self)  # don't pick yourself!
+        wealthy_player = max(self.game.players, key=lambda x: x.coins)
+        if wealthy_player.coins < self.find_action_by_name('steal').cost:
+            return False
+        else:
+            callback(wealthy_player)
+
+    def find_action_by_name(self, name):  # because I dont want possible actions to be a dictionary- it fucks stuff up
+        """helper function to select a action by name"""
+        return next(x for x in self.possible_actions if name == x.name)
+
+    def pick_coup_target(self, callback):
+        players_copy = copy.copy(self.game.players)
+        players_copy.remove(self)  # don't pick yourself!
+        callback(random.choice(players_copy))  # eh random for now
