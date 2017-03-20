@@ -190,7 +190,8 @@ class ThinkingAI(Player):
     sure_const = 3
 
     def stop_action(self, callback, action):
-        pass
+        if action.stopper_card in self.hand:
+            callback(True)
 
     def pick_target(self, callback):
         if isinstance(self.current_action, actions.Coup):
@@ -202,9 +203,17 @@ class ThinkingAI(Player):
         """If you can coup, coup"""
         if self.coins >= 7:
             callback(self.find_action_by_name('coup'))
+        if Card('captain') in self.hand and self.pick_steal_target():
+            callback(self.find_action_by_name('steal'))
 
     def pick_card(self, callback):
-        pass
+        choose_from = self.hand
+        if self.coins >=3:
+            choose_from = (x for x in choose_from if x.name != 'Assassinate')
+        if choose_from:
+            callback(random.choice(choose_from))
+        else:
+            callback(random.choice(self.hand))
 
     def inspect_action(self, action, callback):
         pass
@@ -220,6 +229,7 @@ class ThinkingAI(Player):
             self.other_players[current_player][action.enabler_card] *= self.sure_const
         if action.cancelled:
             self.other_players[current_player][action.enabler_card] = 0
+            self.other_players[self.game.inspecting_player][action.enabler_card] *= self.sure_const
         if action.stopped:
             self.think_about_action(turn.stopping_action, turn)
 
@@ -229,7 +239,17 @@ class ThinkingAI(Player):
         self.other_players = dict()
         self.current_action = None
 
-    # def draw_card(self, card): # i'd use this to update the player_dict, but I dont know the rest of the players are
+    def is_safe_card(self,card_name):
+        card = Card(card_name)
+        if card in self.hand:
+            return True
+        for player in self.game.players: # check if there isnt a big chance someone else has the card
+
+    def card_chance_diff(self,player,card):
+        safe_copy = copy.deepcopy(self.other_players[player])
+        safe_copy.remove(card)
+        for #TODO was here
+    # def draw_card(self, card): # i'd use this to update the player_dict, but I don't know the rest of the players are
     # initialized at this point
     #     super(ThinkingAI, self).draw_card(card)
 
@@ -246,7 +266,7 @@ class ThinkingAI(Player):
                 for card in self.hand:
                     self.other_players[player][card] -= 1 / self.game.deck_size
 
-    def pick_steal_target(self, callback):
+    def pick_steal_target(self, callback = None):
         """returns false if there isn't anyone to steal from, otherwise calls callback with the target
          - the player with the most coins"""
         players_copy = copy.copy(self.game.players)
@@ -254,12 +274,14 @@ class ThinkingAI(Player):
         wealthy_player = max(self.game.players, key=lambda x: x.coins)
         if wealthy_player.coins < self.find_action_by_name('steal').cost:
             return False
-        else:
+        elif callback:
             callback(wealthy_player)
+        else:
+            return True
 
     def find_action_by_name(self, name):  # because I dont want possible actions to be a dictionary- it fucks stuff up
         """helper function to select a action by name"""
-        return next(x for x in self.possible_actions if name == x.name)
+        return next(x for x in self.possible_actions if name.lower() == x.name.lower())
 
     def pick_coup_target(self, callback):
         players_copy = copy.copy(self.game.players)
