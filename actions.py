@@ -15,6 +15,7 @@ class Action:
         self.canceled = False
         self.inspected = False
         self.game = game
+        self.action_value = 0
 
     @abstractmethod
     def do_action(self):
@@ -29,7 +30,10 @@ class Action:
         return self.name + '\n'
 
     def __str__(self):
-        return "P{} does {} \n".format(self.executor.num,self.name)
+        return "P{} does {} \n".format(self.executor.num, self.name)
+
+    def __hash__(self):
+        return hash(self.name)
 
 
 class Steal(Action):
@@ -49,8 +53,8 @@ class Steal(Action):
                 return True
         return False
 
-    def next_action(self,target):
-        if target.coins <=0:
+    def next_action(self, target):
+        if target.coins <= 0:
             print "no coins"
             self.executor.pick_target(callback=self.next_action)
         else:
@@ -60,14 +64,14 @@ class Steal(Action):
 
 
 class CounterAction(Action):
-    def __init__(self, player, counter_of,game=None):
-        super(CounterAction, self).__init__(player,game)
+    def __init__(self, player, counter_of, game=None):
+        super(CounterAction, self).__init__(player, game)
         self.counter_of = counter_of
         self.enabler_card = counter_of.stopper_card
         self.name = "Counter"
 
     def do_action(self):
-        self.counter_of.stopped= True
+        self.counter_of.stopped = True
         super(CounterAction, self).do_action()
 
     def __str__(self):
@@ -100,17 +104,18 @@ class Coup(Action):
         super(Coup, self).__init__(player)
         self.name = "Coup"
         self.cost = 7
+        self.action_value = 15
 
     def do_action(self):
         self.executor.pick_target(callback=self.next_action)
 
-    def next_action(self,target):
-        self.executor.coins-=self.cost
-        self.game.damage_player(target,super(Coup, self).do_action)
+    def next_action(self, target):
+        self.executor.coins -= self.cost
+        self.game.damage_player(target, super(Coup, self).do_action)
         # super(Coup, self).do_action()
 
     def is_valid(self):
-        return self.executor.coins>=self.cost
+        return self.executor.coins >= self.cost
 
 
 class Assassinate(Coup):
@@ -132,13 +137,14 @@ class Tax(Action):
         self.executor.coins += 3
         super(Tax, self).do_action()
 
-
-class Exchange(Action):
-    def __init__(self, player, game=None):
-        super(Exchange, self).__init__(player)
-        self.name = "Exchange"
-    def do_action(self):
-        self.game.reveal_cards(amount=2,player=self.executor, callback=self.next_action)
-
-    def next_action(self,cards):
-        self.game
+#
+# class Exchange(Action):
+#     def __init__(self, player, game=None):
+#         super(Exchange, self).__init__(player)
+#         self.name = "Exchange"
+#
+#     def do_action(self):
+#         self.game.reveal_cards(amount=2,player=self.executor, callback=self.next_action)
+#
+#     def next_action(self,cards):
+#         self.game

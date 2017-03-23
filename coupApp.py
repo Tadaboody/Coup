@@ -41,7 +41,7 @@ class GameScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.add_widget(GraphicalCoup(
-            players=(player.HumanPlayer(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
+            players=(player.RandomAI(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
 
 
 class GraphicalCoup(RelativeLayout, Coup):
@@ -101,12 +101,6 @@ class CoupApp(App):
 
 
 class GraphicalPlayer(player.HumanPlayer):
-    #
-    # def __init__(self, num=0, coins=2, **kwargs):
-    #     player.Player.__init__(self, num=num, coins=coins)
-    #     # Widget.__init__(self,**kwargs)
-    #     self._num = 0
-    #     self.num = num
 
     def pick_item(self, items, message, callback, pop=False):
         ButtonGenerator.generate_choice(items, self.game, callback, text=message)
@@ -143,9 +137,4 @@ class ButtonGenerator(BoxLayout):
             self.bind(on_press=lambda x: ButtonGenerator.close_choice(return_val=given_object, callback=callback,
                                                                       buttons=self.parent))
 
-
-# game = Coup([player.HumanPlayer(),player.RandomAI(),player.RandomAI()],3)
-#
-# game.run_game()
-#
 CoupApp().run()

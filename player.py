@@ -4,6 +4,7 @@ from random import randint
 import random
 import copy
 from abc import abstractmethod, ABCMeta
+from fractions import Fraction
 
 
 class Player():  # TODO: make an abstract player class
@@ -188,6 +189,15 @@ class RandomAI(Player):
 class ThinkingAI(Player):
     doubt_const = 0.5
     sure_const = 3
+    saftey_const = 0.3
+    fear_from_stop = 0.5
+    heuristic_value = {"Coup": 15, "Assasinate": 12}
+
+    def __init__(self, num=3, coins=2):
+        super(ThinkingAI, self).__init__(num, coins)
+        self.strategy = "Thinking"
+        self.other_players = dict()
+        self.current_action = None
 
     def stop_action(self, callback, action):
         if action.stopper_card in self.hand:
@@ -200,15 +210,28 @@ class ThinkingAI(Player):
             self.pick_steal_target(callback)
 
     def pick_action(self, callback):
-        """If you can coup, coup"""
-        if self.coins >= 7:
-            callback(self.find_action_by_name('coup'))
-        if Card('captain') in self.hand and self.pick_steal_target():
-            callback(self.find_action_by_name('steal'))
+
+        heuristic = ((self.action_heuristic_func(x), x) for x in self.possible_actions)
+        return max(heuristic, key=lambda x: x[0])[1]
+        # if self.coins >= 7:
+        #     callback(self.find_action_by_name('coup'))
+        # if Card('captain') in self.hand:
+        #     callback(self.find_action_by_name('steal'))
+
+    def action_heuristic_func(self, action):
+        """
+        :type action: actions.Action
+        """
+        return self.heuristic_value[action.name.capitalize()] * \
+               action.is_valid() - \
+               (action.enabler_card not in self.hand) * \
+               (max(self.card_chance_diff(player, action.enabler_card) for player in self.game.players) +
+                max(self.card_chance_diff(player, action.stopper_card) for player in
+                    self.game.players) * self.fear_from_stop)
 
     def pick_card(self, callback):
         choose_from = self.hand
-        if self.coins >=3:
+        if self.coins >= 3:
             choose_from = (x for x in choose_from if x.name != 'Assassinate')
         if choose_from:
             callback(random.choice(choose_from))
@@ -233,22 +256,22 @@ class ThinkingAI(Player):
         if action.stopped:
             self.think_about_action(turn.stopping_action, turn)
 
-    def __init__(self, num=3, coins=2):
-        super(ThinkingAI, self).__init__(num, coins)
-        self.strategy = "Thinking"
-        self.other_players = dict()
-        self.current_action = None
+    # def is_safe_card(self, card_name):
+    #     card = Card(card_name)
+    #     if card in self.hand:
+    #         return True
+    #     for player in self.game.players:  # check if there isnt a big chance someone else has the card
+    #         pass
 
-    def is_safe_card(self,card_name):
-        card = Card(card_name)
-        if card in self.hand:
-            return True
-        for player in self.game.players: # check if there isnt a big chance someone else has the card
-
-    def card_chance_diff(self,player,card):
+    def card_chance_diff(self, player, card):
+        if not Card:
+            return 0
         safe_copy = copy.deepcopy(self.other_players[player])
+        chance_of_card = safe_copy[card]
         safe_copy.remove(card)
-        for #TODO was here
+        diff_list = (chance_of_card / x, x for x in safe_copy)
+        return max(diff_list, key=lambda x: x[0])
+
     # def draw_card(self, card): # i'd use this to update the player_dict, but I don't know the rest of the players are
     # initialized at this point
     #     super(ThinkingAI, self).draw_card(card)
@@ -262,22 +285,17 @@ class ThinkingAI(Player):
                 self.other_players[player] = dict()
                 for i in xrange(1, Card.num_of_types):
                     # starting probability for having a certain type - amount of cards from a type/total cards
-                    self.other_players[player][Card(i)] = self.game.deck_size / self.game.deck_size * Card.num_of_types
+                    self.other_players[player][Card(i)] = Fraction(self.game.deck_size,
+                                                                   (self.game.deck_size * Card.num_of_types) - 2)
                 for card in self.hand:
-                    self.other_players[player][card] -= 1 / self.game.deck_size
+                    self.other_players[player][card].numinator -= 1
 
-    def pick_steal_target(self, callback = None):
-        """returns false if there isn't anyone to steal from, otherwise calls callback with the target
-         - the player with the most coins"""
+    def pick_steal_target(self, callback=None):
+        """Picks the player with the most coins"""
         players_copy = copy.copy(self.game.players)
         players_copy.remove(self)  # don't pick yourself!
         wealthy_player = max(self.game.players, key=lambda x: x.coins)
-        if wealthy_player.coins < self.find_action_by_name('steal').cost:
-            return False
-        elif callback:
-            callback(wealthy_player)
-        else:
-            return True
+        callback(wealthy_player)
 
     def find_action_by_name(self, name):  # because I dont want possible actions to be a dictionary- it fucks stuff up
         """helper function to select a action by name"""

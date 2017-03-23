@@ -33,7 +33,7 @@ class Coup:
         self.deck_size = deck_size
         self.init_deck(deck_size)
         self.players = []  # player initialization
-        if len(players) * hand_size > deck_size * Card.num_of_types:  # if there arent enough cards
+        if len(players) * hand_size > deck_size * Card.num_of_types:  # if there aren't enough cards
             raise EmptyDeckException()
         for player in players:
             self.add_player(player)
