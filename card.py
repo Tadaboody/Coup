@@ -9,7 +9,7 @@ class Card:
     def __init__(self, type):
         if isinstance(type, str):
             self.type = Card.card_dict[type]
-        if 0 < type < Card.num_of_types:
+        if 0 <= type < Card.num_of_types:
             self.type = type
 
     def __repr__(self):

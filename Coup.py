@@ -22,6 +22,7 @@ class EmptyDeckException(Exception):
 
 class Coup:
     def __init__(self, players, deck_size=2, hand_size=2):
+        self.winner = None
         self.hand_size = hand_size
         self.num_of_players = 0
         self.deck = []
@@ -177,11 +178,13 @@ class Coup:
                 self.inspector = None
 
     def output(self, output):
-        print output
-        print '\n'
+        pass
+        # print output
+        # print '\n'
 
     def declare_winner(self, winner):
         self.output("{} Player {} wins!".format(winner.strategy, winner.num))
+        self.winner = winner
         # raise GameEndException()
 
     def demand_proof(self, action, inspector):

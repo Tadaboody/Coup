@@ -45,7 +45,7 @@ class Steal(Action):
 
     def do_action(self):
         self.game = self.game
-        self.executor.pick_target(callback=self.next_action)
+        self.executor.pick_target(callback=self.next_action, action=self)
 
     def is_valid(self):
         for player in self.game.players:
@@ -56,7 +56,7 @@ class Steal(Action):
     def next_action(self, target):
         if target.coins <= 0:
             print "no coins"
-            self.executor.pick_target(callback=self.next_action)
+            self.executor.pick_target(callback=self.next_action, action=self)
         else:
             target.coins -= 2
             self.executor.coins += 2
@@ -107,7 +107,7 @@ class Coup(Action):
         self.action_value = 15
 
     def do_action(self):
-        self.executor.pick_target(callback=self.next_action)
+        self.executor.pick_target(callback=self.next_action, action=self)
 
     def next_action(self, target):
         self.executor.coins -= self.cost

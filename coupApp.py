@@ -41,7 +41,7 @@ class GameScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.add_widget(GraphicalCoup(
-            players=(player.RandomAI(), player.RandomAI(), player.RandomAI(), player.RandomAI())))
+            players=(player.RandomAI(), player.ThinkingAI())))
 
 
 class GraphicalCoup(RelativeLayout, Coup):
@@ -73,8 +73,8 @@ class GraphicalCoup(RelativeLayout, Coup):
         # player.pos
         # self.player_places[player.num].add_widget(player)
 
-    def pass_turn(self):
-        self.run_turn()
+    # def pass_turn(self):
+    #     self.run_turn()
 
     def declare_action_to_inspect(self, action):
         self.announcment_label = Label(pos=(200, 200),
@@ -101,7 +101,6 @@ class CoupApp(App):
 
 
 class GraphicalPlayer(player.HumanPlayer):
-
     def pick_item(self, items, message, callback, pop=False):
         ButtonGenerator.generate_choice(items, self.game, callback, text=message)
 
@@ -137,4 +136,29 @@ class ButtonGenerator(BoxLayout):
             self.bind(on_press=lambda x: ButtonGenerator.close_choice(return_val=given_object, callback=callback,
                                                                       buttons=self.parent))
 
+
 CoupApp().run()
+# class ProgressBar:
+#     def __init__(self, total):
+#         self.index = float(0)
+#         self.total = float(total)
+#         self.progress = float(self.index / total) * 100
+#
+#     def update(self):
+#         self.index += 1
+#         a = float((self.index / self.total))
+#         a *= 100
+#         if int(a) != int(self.progress):
+#             self.progress = (self.index / self.total) * 100
+#             print str(int(self.progress)) + '%'
+# winners = [0] * 4
+# total = 500
+#
+# prog = ProgressBar(total)
+# for i in xrange(total):
+#     game = Coup(players=(player.RandomAI(), player.ThinkingAI(),player.RandomAI()))
+#     game.run_game()
+#     winners[game.winner.num - 1] += 1
+#     prog.update()
+#
+# print winners

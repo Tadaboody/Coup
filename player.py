@@ -79,7 +79,7 @@ class Player():  # TODO: make an abstract player class
         pass
 
     @abstractmethod
-    def pick_target(self, callback):
+    def pick_target(self, callback, action):
         pass
 
     @abstractmethod
@@ -129,7 +129,7 @@ class HumanPlayer(Player):
         super(HumanPlayer, self).__init__(num, coins)
         self.strategy = "Human"
 
-    def pick_target(self, callback):
+    def pick_target(self, callback, action):
         players_copy = copy.copy(self.game.players)
         players_copy.remove(self)
         self.pick_item(players_copy, "Pick a target", callback)
@@ -167,7 +167,7 @@ class RandomAI(Player):
     def stop_action(self, callback, action):
         callback(bool(randint(0, 1)))
 
-    def pick_target(self, callback):
+    def pick_target(self, callback, action):
         # return game.players[input("who {}".format(len(game.players) - 1))]
         players_copy = copy.copy(self.game.players)
         if self in players_copy:
@@ -191,7 +191,7 @@ class ThinkingAI(Player):
     sure_const = 3
     saftey_const = 0.3
     fear_from_stop = 0.5
-    heuristic_value = {"Coup": 15, "Assasinate": 12}
+    heuristic_value = {"Coup": 15, "Assassinate": 12, "Steal": 10, "Tax": 7, "Foreign Aid": 5, "Income": 3}
 
     def __init__(self, num=3, coins=2):
         super(ThinkingAI, self).__init__(num, coins)
@@ -200,19 +200,18 @@ class ThinkingAI(Player):
         self.current_action = None
 
     def stop_action(self, callback, action):
-        if action.stopper_card in self.hand:
-            callback(True)
+        callback(action.stopper_card in self.hand)
 
-    def pick_target(self, callback):
-        if isinstance(self.current_action, actions.Coup):
+    def pick_target(self, callback, action):
+        if isinstance(action, actions.Coup):
             self.pick_coup_target(callback)
-        elif isinstance(self.current_action, actions.Steal):
+        elif isinstance(action, actions.Steal):
             self.pick_steal_target(callback)
 
     def pick_action(self, callback):
 
         heuristic = ((self.action_heuristic_func(x), x) for x in self.possible_actions)
-        return max(heuristic, key=lambda x: x[0])[1]
+        callback(max(heuristic, key=lambda x: x[0])[1])
         # if self.coins >= 7:
         #     callback(self.find_action_by_name('coup'))
         # if Card('captain') in self.hand:
@@ -222,39 +221,46 @@ class ThinkingAI(Player):
         """
         :type action: actions.Action
         """
-        return self.heuristic_value[action.name.capitalize()] * \
-               action.is_valid() - \
-               (action.enabler_card not in self.hand) * \
-               (max(self.card_chance_diff(player, action.enabler_card) for player in self.game.players) +
-                max(self.card_chance_diff(player, action.stopper_card) for player in
-                    self.game.players) * self.fear_from_stop)
+        if action.enabler_card:
+            return self.heuristic_value[action.name.capitalize()] * \
+                   action.is_valid() - \
+                   (action.enabler_card not in self.hand) * \
+                   (max(self.card_chance_diff(player, action.enabler_card) for player in self.game.players if
+                        player != self) +
+                    max(self.card_chance_diff(player, action.stopper_card) for player in self.game.players))
 
     def pick_card(self, callback):
-        choose_from = self.hand
-        if self.coins >= 3:
-            choose_from = (x for x in choose_from if x.name != 'Assassinate')
-        if choose_from:
-            callback(random.choice(choose_from))
-        else:
+        # choose_from = self.hand
+        # choice = random.choice(self.hand)
+        # if self.coins >= 3 and choice.name is 'Assassinate':
+        #     choose_from = (x for x in choose_from if x.name != 'Assassinate')
+        # if choose_from:
+        #     callback(random.choice((x for x in choose_from if x.name != 'Assassinate')))
+        # else:
             callback(random.choice(self.hand))
 
     def inspect_action(self, action, callback):
-        pass
+        callback(self.card_chance_diff(action.executor, action.enabler_card) > self.doubt_const)
 
     def think_about_turn(self, turn):
         self.think_about_action(turn.main_action, turn)
 
     def think_about_action(self, action, turn):
         current_player = action.executor
-        if action.inspected and not action.canceled:
-            self.other_players[current_player][action.enabler_card] = 1
-        if not (action.cancelled or action.stopped):  # if the action was succsessfully done
-            self.other_players[current_player][action.enabler_card] *= self.sure_const
-        if action.cancelled:
-            self.other_players[current_player][action.enabler_card] = 0
-            self.other_players[self.game.inspecting_player][action.enabler_card] *= self.sure_const
-        if action.stopped:
-            self.think_about_action(turn.stopping_action, turn)
+        enabler_card = action.enabler_card
+        if not action.enabler_card:
+            enabler_card = Card(0)
+        if current_player is not self:
+            if action.inspected and not action.canceled:
+                self.other_players[current_player][enabler_card] = 1
+            if not (action.canceled or action.stopped):  # if the action was succsessfully done
+                self.other_players[current_player][enabler_card] *= self.sure_const
+            if action.canceled:
+                self.other_players[current_player][enabler_card] = 0
+                if self.game.inspecting_player is not self:
+                    self.other_players[self.game.inspecting_player][enabler_card] *= self.sure_const
+            if action.stopped:
+                self.think_about_action(turn.stopping_action, turn)
 
     # def is_safe_card(self, card_name):
     #     card = Card(card_name)
@@ -264,13 +270,17 @@ class ThinkingAI(Player):
     #         pass
 
     def card_chance_diff(self, player, card):
-        if not Card:
+        if (not card) or player is self:
             return 0
         safe_copy = copy.deepcopy(self.other_players[player])
         chance_of_card = safe_copy[card]
-        safe_copy.remove(card)
-        diff_list = (chance_of_card / x, x for x in safe_copy)
-        return max(diff_list, key=lambda x: x[0])
+        del safe_copy[card]
+        # diff_list = ((chance_of_card * inverse_fraction(x), x) for x in safe_copy.values())
+        diff_list = (chance_of_card * inverse_fraction(x) for x in safe_copy.values())
+        # return max(diff_list, key=lambda x: x[0])
+        re_val = max(diff_list)
+        # print "max is " + str(re_val)
+        return re_val
 
     # def draw_card(self, card): # i'd use this to update the player_dict, but I don't know the rest of the players are
     # initialized at this point
@@ -283,12 +293,13 @@ class ThinkingAI(Player):
         for player in self.game.players:
             if player is not self:
                 self.other_players[player] = dict()
-                for i in xrange(1, Card.num_of_types):
+                for i in xrange(0, Card.num_of_types):
                     # starting probability for having a certain type - amount of cards from a type/total cards
                     self.other_players[player][Card(i)] = Fraction(self.game.deck_size,
                                                                    (self.game.deck_size * Card.num_of_types) - 2)
                 for card in self.hand:
-                    self.other_players[player][card].numinator -= 1
+                    self.other_players[player][card] = Fraction(
+                        self.other_players[player][card].numerator - 1, self.other_players[player][card].denominator)
 
     def pick_steal_target(self, callback=None):
         """Picks the player with the most coins"""
@@ -302,6 +313,19 @@ class ThinkingAI(Player):
         return next(x for x in self.possible_actions if name.lower() == x.name.lower())
 
     def pick_coup_target(self, callback):
+        """eh random for now"""
         players_copy = copy.copy(self.game.players)
-        players_copy.remove(self)  # don't pick yourself!
-        callback(random.choice(players_copy))  # eh random for now
+        if self in players_copy:
+            players_copy.remove(self) # dont pick yourself
+        if players_copy:
+            target = random.choice(players_copy)
+            callback(target)
+        else:
+            self.game.game_over()
+
+
+def inverse_fraction(fraction):
+    try:
+        return Fraction(fraction.denominator, fraction.numerator)
+    except ZeroDivisionError:
+        return Fraction(0, 1)
