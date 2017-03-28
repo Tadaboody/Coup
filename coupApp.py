@@ -137,28 +137,29 @@ class ButtonGenerator(BoxLayout):
                                                                       buttons=self.parent))
 
 
-CoupApp().run()
-# class ProgressBar:
-#     def __init__(self, total):
-#         self.index = float(0)
-#         self.total = float(total)
-#         self.progress = float(self.index / total) * 100
+# CoupApp().run()
+class ProgressBar:
+    def __init__(self, total):
+        self.index = float(0)
+        self.total = float(total)
+        self.progress = float(self.index / total) * 100
+
+    def update(self):
+        self.index += 1
+        a = float((self.index / self.total))
+        a *= 100
+        if int(a) != int(self.progress):
+            self.progress = (self.index / self.total) * 100
+            print str(int(self.progress)) + '%'
+winners = [0] * 4
+total = 5000
+
+prog = ProgressBar(total)
+for i in xrange(total):
+    game = Coup(players=(player.RandomAI(), player.ThinkingAI(),player.RandomAI()))
+    game.run_game()
+    winners[game.winner.num - 1] += 1
+    prog.update()
+
+print winners
 #
-#     def update(self):
-#         self.index += 1
-#         a = float((self.index / self.total))
-#         a *= 100
-#         if int(a) != int(self.progress):
-#             self.progress = (self.index / self.total) * 100
-#             print str(int(self.progress)) + '%'
-# winners = [0] * 4
-# total = 500
-#
-# prog = ProgressBar(total)
-# for i in xrange(total):
-#     game = Coup(players=(player.RandomAI(), player.ThinkingAI(),player.RandomAI()))
-#     game.run_game()
-#     winners[game.winner.num - 1] += 1
-#     prog.update()
-#
-# print winners
