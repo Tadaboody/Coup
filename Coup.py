@@ -3,7 +3,7 @@ from card import Card
 from random import shuffle
 import actions
 import copy
-
+import random
 
 class TurnPassException(Exception):
     def __str__(self):
@@ -21,7 +21,13 @@ class EmptyDeckException(Exception):
 
 
 class Coup:
-    def __init__(self, players, deck_size=2, hand_size=2):
+    def __init__(self, players, deck_size=2, hand_size=2,seed=None,should_print = True):
+        self.should_print = should_print
+        if not seed:
+            random.seed()
+        else:
+            random.setstate(tuple(seed))
+        self.seed = random.getstate()
         self.winner = None
         self.hand_size = hand_size
         self.num_of_players = 0
@@ -81,6 +87,7 @@ class Coup:
     def run_game(self):
         self.output("Game start:")
         try:
+
             self.run_turn()
         except GameEndException as a:
             self.output(a)
@@ -178,9 +185,10 @@ class Coup:
                 self.inspector = None
 
     def output(self, output):
-        pass
-        # print output
-        # print '\n'
+        # pass
+        if self.should_print:
+            print output
+            print '\n'
 
     def declare_winner(self, winner):
         self.output("{} Player {} wins!".format(winner.strategy, winner.num))
@@ -206,7 +214,8 @@ class Coup:
         for player in self.players:
             if not player.hand:
                 self.remove_player(player)
-        self.damage_callback()
+        if self.is_playing:
+            self.damage_callback()
 
     def remove_player(self, player):
         self.output("Player {} Removed!".format(player.num))

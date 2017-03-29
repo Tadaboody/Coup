@@ -200,7 +200,10 @@ class RandomAI(Player):
         for player in self.game.players:
             if player.coins >= 2:
                 steal_targets.append(player)
-        callback(random.choice(steal_targets))
+        if steal_targets:
+            callback(random.choice(steal_targets))
+        else:
+            callback(self)
 
 
 class ThinkingAI(Player):
