@@ -20,20 +20,6 @@ class SettingScreen(Screen, RelativeLayout):
     pass
 
 
-class Log(ScrollView):
-    text = StringProperty("")
-
-    def __init__(self, **kwargs):
-        super(Log, self).__init__(**kwargs)
-        self._internal_text = ""
-
-    def __iadd__(self, other):
-        self._internal_text += other + '\n'
-        self.text = self._internal_text
-        return self
-        # self.do_scroll
-
-
 class GameScreen(Screen):
     # player_positions = [('center', 'bottom'), ('center', 'top'), ('left', 'center'), ('right', 'center')]
     # player_positions = [(0,0),(500,500),(100,100)]
@@ -41,16 +27,30 @@ class GameScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.add_widget(GraphicalCoup(
-            players=(player.HumanPlayer(), player.ThinkingAI())))
+            players=(player.HumanPlayer(), player.ThinkingAI(),player.RandomAI(),player.RandomAI())))
+
+
+
 
 
 class GraphicalCoup(RelativeLayout, Coup):
     # player_positions = [('center', 'bottom'), ('center', 'top'), ('left', 'center'), ('right', 'center')]
     # # player_positions = [(0,0),(500,500),(100,100)]
     # player_places = [Blob(anchor_x=ps[0], anchor_y=ps[1]) for ps in player_positions]
+    class Log(ScrollView):
+        text = StringProperty("")
 
+        def __init__(self, **kwargs):
+            super(GraphicalCoup.Log, self).__init__(**kwargs)
+            self._internal_text = ""
+
+        def __iadd__(self, other):
+            self._internal_text += other + '\n'
+            self.text = self._internal_text
+            return self
+            # self.do_scroll
     def __init__(self, players, **kwargs):
-        self.log = Log()
+        self.log = GraphicalCoup.Log()
         Coup.__init__(self, players=players, deck_size=2, hand_size=2)
         RelativeLayout.__init__(self, **kwargs)
         self.add_widget(self.log)
@@ -132,7 +132,7 @@ class ButtonGenerator(BoxLayout):
     class ReturningButton(Button):
         def __init__(self, given_object, callback, **kwargs):
             super(ButtonGenerator.ReturningButton, self).__init__(**kwargs)
-            self.text = repr(given_object)
+            self.text = str(given_object)
             self.bind(on_press=lambda x: ButtonGenerator.close_choice(return_val=given_object, callback=callback,
                                                                       buttons=self.parent))
 

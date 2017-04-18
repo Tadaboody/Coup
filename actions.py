@@ -27,10 +27,10 @@ class Action:
         return True
 
     def __repr__(self):
-        return self.name + '\n'
+        return "P{} does {} \n".format(self.executor.num, self.name)
 
     def __str__(self):
-        return "P{} does {} \n".format(self.executor.num, self.name)
+        return self.name + '\n'
 
     def __hash__(self):
         return hash(self.name)

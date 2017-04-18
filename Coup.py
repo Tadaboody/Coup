@@ -101,7 +101,7 @@ class Coup:
             self.declare_action_to_inspect(action)
 
     def declare_action_to_inspect(self, action):  # todo: break into two functions
-        self.output(action)
+        self.output("P{} does {}".format(action.executor.num,action))
         self.current_action = action
         if action.enabler_card:
             self.inspect_cycle = cycle(self.players)
