@@ -212,10 +212,12 @@ class ThinkingAI(Player):
             self.pick_steal_target(callback)
 
     def pick_action(self, callback):
-
+        """Picks the action with the highest heuristic value"""
         heuristic = list()
+        self.game.output("Calculating chances of success")
         for x in self.possible_actions:
             heuristic.append((self.action_heuristic_func(x), x))
+
         callback(max(heuristic, key=lambda x: x[0])[1])
         # if self.coins >= 7:
         #     callback(self.find_action_by_name('coup'))
@@ -233,6 +235,7 @@ class ThinkingAI(Player):
         if action.stopper_card:
             return_value -= max(self.card_chance_diff(player, action.stopper_card) for player in self.game.players if
                                 player != self) * self.fear_from_stop
+        self.game.output(str(action) + str(return_value))
         return return_value
         # if action.enabler_card: :really cool "one line" version:
         #     return self.heuristic_value[action.name.capitalize()] * \
@@ -255,12 +258,14 @@ class ThinkingAI(Player):
         callback(random.choice(self.hand))
 
     def inspect_action(self, action, callback):
+        self.game.output("Chances he can't {} {}".format(str(action),str(self.card_chance_diff(action.executor, action.enabler_card))))
         callback(self.card_chance_diff(action.executor, action.enabler_card) > self.doubt_const)
 
     def think_about_turn(self, turn):
         self.think_about_action(turn.main_action, turn)
 
     def think_about_action(self, action, turn):
+        """Adds new data from the last action and turn"""
         current_player = action.executor
         enabler_card = action.enabler_card
         if not action.enabler_card:
