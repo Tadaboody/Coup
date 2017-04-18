@@ -19,11 +19,13 @@ class Action:
 
     @abstractmethod
     def do_action(self):
+        """Executes the current action and passes the turn"""
         self.stopped = False
         self.canceled = False
         self.game.pass_turn()
 
     def is_valid(self):
+        """Returns if the current action is legal"""
         return True
 
     def __repr__(self):
@@ -54,10 +56,10 @@ class Steal(Action):
         return False
 
     def next_action(self, target):
-        if target.coins <= 0:
-            print "no coins"
-            self.executor.pick_target(callback=self.next_action, action=self)
-        else:
+        # if target.coins <= 0:
+        #     print "no coins"
+        #     self.executor.pick_target(callback=self.next_action, action=self)
+        # else:
             target.coins -= 2
             self.executor.coins += 2
             super(Steal, self).do_action()

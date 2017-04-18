@@ -17,16 +17,7 @@ class Player():  # TODO: make an abstract player class
         self.hand_size = 0
         self.coins = coins
         self.num = num
-        # self.possible_actions = {
-        #     'income': actions.Income(self),
-        #     'steal': actions.Steal(self),
-        #     'aid': actions.ForeignAid(self),
-        #     'coup': actions.Coup(self),
-        #     'assassinate': actions.Assassinate(self),
-        #     'tax': actions.Tax(self),
-        #     # 'exchange':actions.Exchange(self)
-        # }
-        self.possible_actions = [
+        self.possible_actions = (
             actions.Income(self),
             actions.Steal(self),
             actions.ForeignAid(self),
@@ -34,7 +25,7 @@ class Player():  # TODO: make an abstract player class
             actions.Assassinate(self),
             actions.Tax(self),
             # actions.Exchange(self)
-        ]
+        )
         self._game = None
 
     @property
@@ -58,14 +49,6 @@ class Player():  # TODO: make an abstract player class
         return "P{}\n" \
                "Coins:{}\n" \
                "Hand size:{}".format(self.num, self.coins, len(self.hand))
-
-    # @property
-    # def num(self):
-    #     return self._num
-    #
-    # @num.setter
-    # def num(self, value):
-    #     self._num = value
 
     def take_turn(self, callback):
         self.pick_action(callback)
@@ -112,10 +95,10 @@ class Player():  # TODO: make an abstract player class
         self.picked = list()
         self.return_cards(callback)
 
-    def swap_cards(self, drawn_cards, callback):
-        self.hand = self.hand + drawn_cards
-        self.picked = list()
-        self.pick_card(callback)
+    # def swap_cards(self, drawn_cards, callback):
+    #     self.hand = self.hand + drawn_cards
+    #     self.picked = list()
+    #     self.pick_card(callback)
 
     def think_about_turn(self, turn):
         pass
@@ -211,7 +194,7 @@ class ThinkingAI(Player):
     sure_const = 3
     saftey_const = 0.3
     fear_from_stop = 0.5
-    heuristic_value = {"Coup": 5, "Assassinate": 4, "Steal": 3, "Tax": 2, "Foreign aid": 1, "Income": 0.1}
+    heuristic_value = {"Coup": 3.5, "Assassinate": 3, "Steal": 2.5, "Tax": 2, "Foreign aid": 1.5, "Income": 1}
 
     def __init__(self, num=3, coins=2):
         super(ThinkingAI, self).__init__(num, coins)
@@ -330,8 +313,8 @@ class ThinkingAI(Player):
                 self.other_players[player][Card(0)] = 0  # cant have a "none" card
                 for i in xrange(1, Card.num_of_types):
                     # starting probability for having a certain type - amount of cards from a type/total cards
-                    self.other_players[player][Card(i)] = Fraction(self.game.deck_size,
-                                                                   (self.game.deck_size * (Card.num_of_types - 1)) - 2)
+                    self.other_players[player][Card(i)] = Fraction(self.game.amount_of_each_card,
+                                                                   (self.game.amount_of_each_card * (Card.num_of_types - 1)) - 2)
                 for card in self.hand:
                     self.other_players[player][card] = Fraction(
                         self.other_players[player][card].numerator - 1, self.other_players[player][card].denominator)
