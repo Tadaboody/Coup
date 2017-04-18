@@ -3,10 +3,6 @@ import player
 from ast import literal_eval
 
 
-class GameCrashException(Exception):
-    def __init__(self, game):
-        self.game = game
-
 
 class ProgressBar:
     def __init__(self, total):
@@ -34,17 +30,16 @@ if input("seed to crash?"):
         crashing_seeds = seed_file.readlines()
         seed = crashing_seeds[0]
         seed = literal_eval(seed)
-try:
-    for i in xrange(total):
-        game = Coup(players=(player.RandomAI(), player.ThinkingAI(), player.RandomAI(),player.RandomAI()),seed=seed,should_print=False)
-        try:
-            game.run_game()
-        except RuntimeError:
-            raise GameCrashException(game)
-        winners[game.winner.num - 1] += 1
-        prog.update()
-except GameCrashException as g:
-    crashing_seeds.append(g.game.seed)
+for i in xrange(total):
+    game = Coup(players=(player.RandomAI(), player.RandomAI(), player.RandomAI(),player.ThinkingAI()),seed=seed,should_print=False)
+    try:
+        game.run_game()
+    except RuntimeError as r:
+        print r.message
+        crashing_seeds.append(game.seed)
+        continue
+    winners[game.winner.num - 1] += 1
+    prog.update()
 with open("seeds.txt", 'wb') as file:
     for seed in crashing_seeds:
         print >> file, seed
@@ -52,4 +47,5 @@ print winners
 winnersum = 0
 for player in winners:
     winnersum += player
-print str(float(winners[1]) / float(winnersum) * 100) + '%'
+if winnersum:
+    print str(float(winners[-1]) / float(winnersum) * 100) + '%'
