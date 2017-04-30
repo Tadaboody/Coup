@@ -5,6 +5,7 @@ import actions
 import copy
 import random
 
+
 class TurnPassException(Exception):
     def __str__(self):
         return "Turn Passed"
@@ -21,11 +22,11 @@ class EmptyDeckException(Exception):
 
 
 class Coup:
-    def __init__(self, players, deck_size=2, hand_size=2,seed=None,should_print = True):
+    def __init__(self, players, deck_size=2, hand_size=2, seed=None, should_print=True):
         self.should_print = should_print
-        if not seed: #Seeds randomness to save and future develop
+        if not seed:  # Seeds randomness to save and future develop
             random.seed()
-        else: #If given an existing seed for the game, runs the given seed
+        else:  # If given an existing seed for the game, runs the given seed
             random.setstate(tuple(seed))
         self.seed = random.getstate()
         self.winner = None
@@ -83,7 +84,7 @@ class Coup:
             self.output("New Turn!")
             while not current_player.playing:
                 current_player = next(self.current_player_pointer)
-            self.output(current_player)
+            self.output(current_player,current_player.num)
             # try:
             if self.num_of_players > 1:
                 current_player.take_turn(self.pick_action)
@@ -92,11 +93,11 @@ class Coup:
 
     def run_game(self):
         """Runs the game loop"""
-        self.output("Game start:")
+        self.output("Game start:",0)
         try:
             self.run_turn()
         except GameEndException as a:
-            self.output(a)
+            self.output(a,0)
         finally:
             pass
 
@@ -109,7 +110,7 @@ class Coup:
 
     def declare_action_to_inspect(self, action):
         """Starts a cycle asking every player if they want to inspect the current action"""
-        self.output("P{} does {}".format(action.executor.num,action))
+        self.output("P{} does {}".format(action.executor.num, action), action.executor.num)
         self.current_action = action
         if action.enabler_card:
             self.inspect_cycle = cycle(self.players)
@@ -125,7 +126,8 @@ class Coup:
     def inspect_action(self, inspection):
         """Continues the cycle asking every player if they want to inspect the current action"""
         if inspection:
-            self.output("P{} is inspecting the {}".format(self.inspecting_player.num, self.current_action))
+            self.output("P{} is inspecting the {}".format(self.inspecting_player.num, self.current_action),
+                        self.inspecting_player.num)
             self.current_action.inspected = True
             if self.demand_proof(self.current_action, self.inspecting_player):
                 self.damage_player(self.inspecting_player, callback=self.declare_action_to_stop)
@@ -186,6 +188,7 @@ class Coup:
 
     class Turn:
         """Describes the happenings of a single turn"""
+
         def __init__(self, deck, main_action, stopping_action, inspector):
             self.deck = tuple(deck)
             self.main_action = copy.copy(main_action)
@@ -196,14 +199,14 @@ class Coup:
             else:
                 self.inspector = None
 
-    def output(self, output):
+    def output(self, output, player=0):
         # pass
         if self.should_print:
             print output
             print '\n'
 
     def declare_winner(self, winner):
-        self.output("{} Player {} wins!".format(winner.strategy, winner.num))
+        self.output("{} Player {} wins!".format(winner.strategy, winner.num), winner.num)
         self.winner = winner
         # raise GameEndException()
 
@@ -211,13 +214,13 @@ class Coup:
         # self.output("P{} is inspecting the {}".format(inspector.num,action.name))
         for card in action.executor.hand:
             if action.enabler_card == card:
-                self.output("P{} speaks the truth!".format(str(action.executor.num)))
+                self.output("P{} speaks the truth!".format(str(action.executor.num)), action.executor.num)
                 return True
-        self.output("P{} speaks Lies!".format(str(action.executor.num)))
+        self.output("P{} speaks Lies!".format(str(action.executor.num)), action.executor.num)
         return False
 
     def damage_player(self, player, callback):
-        self.output("Damage P{}~!".format(str(player.num)))
+        self.output("Damage P{}~!".format(str(player.num)), player.num)
         self.damage_callback = callback  # quick_fix
         player.discard_card(self.player_damaged)
         # callback()
@@ -230,7 +233,7 @@ class Coup:
             self.damage_callback()
 
     def remove_player(self, player):
-        self.output("Player {} Removed!".format(player.num))
+        self.output("Player {} Removed!".format(player.num),player.num)
         player.playing = False
         self.players.remove(player)
         self.num_of_players -= 1

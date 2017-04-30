@@ -27,10 +27,7 @@ class GameScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.add_widget(GraphicalCoup(
-            players=(player.HumanPlayer(), player.ThinkingAI(),player.RandomAI(),player.RandomAI())))
-
-
-
+            players=(player.HumanPlayer(), player.ThinkingAI(), player.RandomAI(), player.RandomAI())))
 
 
 class GraphicalCoup(RelativeLayout, Coup):
@@ -42,25 +39,44 @@ class GraphicalCoup(RelativeLayout, Coup):
 
         def __init__(self, **kwargs):
             super(GraphicalCoup.Log, self).__init__(**kwargs)
+            self.colors = ("[color=ffffff]", "[color=ff9933]", "[color=ff66ff]", "[color=64c5af]", "[color=66ff66]")
+            self.current_color = self.colors[0]
             self._internal_text = ""
 
         def __iadd__(self, other):
-            self._internal_text += other + '\n'
+            self._internal_text += self.current_color + other + '[/color]' '\n'
             self.text = self._internal_text
             return self
             # self.do_scroll
+
+        def set_color(self, num):
+            self.current_color = self.colors[num]
+
+    class StatusLabel(Label):
+        def __init__(self, game, **kwargs):
+            super(GraphicalCoup.StatusLabel, self).__init__(**kwargs)
+            self.game = game
+
+        def reload(self):
+            string = ""
+            for player in self.game.players:
+                string += str(player)
+            self.text = string
+
     def __init__(self, players, **kwargs):
         self.log = GraphicalCoup.Log()
         Coup.__init__(self, players=players, deck_size=2, hand_size=2)
         RelativeLayout.__init__(self, **kwargs)
         self.add_widget(self.log)
+        self.add_widget(GraphicalCoup.StatusLabel(self))
         self.run_game()
 
-    def output(self, output):
-        super(GraphicalCoup, self).output(output)
+    def output(self, output, player=0):
+        super(GraphicalCoup, self).output(output, player)
         string = (str(output))
         # print string
         # self.log.__iadd__(string)
+        self.log.set_color(player)
         self.log += string
         # self.text_label.refresh()
 
@@ -135,5 +151,6 @@ class ButtonGenerator(BoxLayout):
             self.text = str(given_object)
             self.bind(on_press=lambda x: ButtonGenerator.close_choice(return_val=given_object, callback=callback,
                                                                       buttons=self.parent))
+
 
 CoupApp().run()
